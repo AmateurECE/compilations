@@ -1,0 +1,2 @@
+recursive-include compilations/static/*
+recursive-include compilations/templates/*
