@@ -1,0 +1,26 @@
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background-color: #1f1f1f;
+}
+
+.video-player {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.video-box {
+    max-width: 50%;
+    height: 100vh;
+    display: flex;
+}
+
+video {
+    max-height: 100vh !important;
+    max-width: 50vw !important; /* We have two "view ports" */
+}

@@ -1,13 +1,13 @@
 from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.response import Response
+import requests
+from bs4 import BeautifulSoup
 
 import json
 import logging
 
 VIDEOS = [
-    {'url': 'url'},
-    {'url': 'url2'},
 ]
 
 def index(request):
@@ -24,10 +24,10 @@ class VideoCollectionView(viewsets.ViewSet):
             key = int(pk)
             if key >= len(VIDEOS) or key < 0:
                 return Response(status=404) # Not found
-            response = requests.get()
+            response = requests.get(VIDEOS[key]['url'])
             if response.ok:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 videoElement = soup.find('meta', {'property': 'og:video'})
-                return videoElement['content']
+                return Response(videoElement['content'])
         except ValueError:
             return Response(status=400) # Bad request

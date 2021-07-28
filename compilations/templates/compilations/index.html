@@ -4,9 +4,13 @@
     <meta charset="utf-8" />
     <title>Compilation</title>
     <meta name="description" content="" />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'compilations/css/style.css' %}">
   </head>
   <body>
-    {% load static %}
+    <div class="video-player" id="player">
+    </div>
+
     <script src="{% static 'compilations/js/index.js' %}"></script>
   </body>
 </html>
