@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='django-compilations',
-    version='1.0',
+    version='0.1.0',
     author='Ethan D. Twardy',
     author_email='ethan.twardy@gmail.com',
     description='Django application for generating video compilations',
