@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <title>Compilation</title>
     <meta name="description" content="" />
+    <meta name="api-base" content="{% url 'compilations-index' %}" />
     {% load static %}
     <link rel="stylesheet" href="{% static 'compilations/css/style.css' %}">
   </head>
@@ -11,6 +12,7 @@
     <div class="video-player" id="player">
     </div>
 
+    {% csrf_token %}
     <script src="{% static 'compilations/js/index.js' %}"></script>
   </body>
 </html>

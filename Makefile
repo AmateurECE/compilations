@@ -7,7 +7,7 @@
 #
 # CREATED:	    07/27/2021
 #
-# LAST EDITED:	    07/27/2021
+# LAST EDITED:	    08/09/2021
 ###
 
 all: build.lock
@@ -34,5 +34,6 @@ jsDeps = \
 
 $(jsIndex): $(jsDeps)
 	npm run build
+	touch $@
 
 ###############################################################################
