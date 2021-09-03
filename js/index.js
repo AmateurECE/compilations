@@ -7,7 +7,7 @@
 //
 // CREATED:         07/26/2021
 //
-// LAST EDITED:     08/22/2021
+// LAST EDITED:     08/28/2021
 ////
 
 let videoList; // Global state!?
@@ -84,7 +84,7 @@ async function kickoffVideoLoop() {
     if (video === undefined) {
         while (true) {
             if (videoList.after !== null) {
-                videoList = await client.jsonFetch(
+                videoList = await this.client.jsonFetch(
                     'videos/' + `?after=${videoList.after}`
                         + `&count=${videoList.count}`);
                 console.log(videoList);
