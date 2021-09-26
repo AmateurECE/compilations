@@ -7,7 +7,7 @@
 //
 // CREATED:         07/26/2021
 //
-// LAST EDITED:     08/28/2021
+// LAST EDITED:     09/20/2021
 ////
 
 let videoList; // Global state!?
@@ -46,7 +46,7 @@ class ApiClient {
         return response.json();
     }
 
-    async jsonDelete(endpoint) {
+    async jsonDelete(endpoint, throwError=true) {
         const response = await fetch(
             this.rootUrl + endpoint, {
                 method: 'DELETE',
@@ -57,8 +57,8 @@ class ApiClient {
             }
         );
 
-        if (!response.ok) {
-            throw Error(response.statusText);
+        if (!response.ok && throwError) {
+            throw Error(response);
         }
 
         return {};
@@ -80,29 +80,37 @@ async function kickoffVideoLoop() {
     boxElement.appendChild(videoElement);
 
     let video = videoList.videos.shift();
+    let url;
     let sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-    if (video === undefined) {
-        while (true) {
-            if (videoList.after !== null) {
-                videoList = await this.client.jsonFetch(
-                    'videos/' + `?after=${videoList.after}`
-                        + `&count=${videoList.count}`);
-                console.log(videoList);
-                if (videoList.videos.length === 0) {
-                    await sleep(2000);
-                } else {
-                    video = videoList.videos.shift();
-                    break;
-                }
+    while (true) {
+        if (video === undefined && videoList.after !== null) {
+            videoList = await this.client.jsonFetch(
+                'videos/' + `?after=${videoList.after}`
+                    + `&count=${videoList.count}`);
+            console.log(videoList);
+            if (videoList.videos.length === 0) {
+                await sleep(2000);
             } else {
+                video = videoList.videos.shift();
+            }
+        } else if (video === undefined) {
+            break;
+        } else if (url === undefined) {
+            try {
+                url = await this.client.jsonFetch(
+                    'videos/' + video.guid + '/');
                 break;
+            } catch(error) {
+                await this.client.jsonDelete(
+                    'videos/' + video.name + '/', throwError=false);
+                video = videoList.videos.shift();
+                url = undefined;
             }
         }
     }
 
-    if (video !== undefined) {
+    if (url !== undefined) {
         this.videoBox = video;
-        const url = await this.client.jsonFetch('videos/' + video.guid + '/');
         videoElement.src = url;
         console.log(videoElement.src);
         videoElement.addEventListener(

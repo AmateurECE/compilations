@@ -1,0 +1,41 @@
+diff --git a/js/index.js b/js/index.js
+index 726bee8..8473f4a 100644
+--- a/js/index.js
++++ b/js/index.js
+@@ -102,13 +102,29 @@ async function kickoffVideoLoop() {
+ 
+     if (video !== undefined) {
+         this.videoBox = video;
+-        const url = await this.client.jsonFetch('videos/' + video.guid + '/');
+-        videoElement.src = url;
+-        console.log(videoElement.src);
+-        videoElement.addEventListener(
+-            'ended', kickoffVideoLoop.bind(this), false);
+-        videoElement.addEventListener(
+-            'canplaythrough', async () => { await videoElement.play(); });
++        while (true) {
++            try {
++                const url = await this.client.jsonFetch(
++                    'videos/' + video.guid + '/');
++                videoElement.src = url;
++                console.log(videoElement.src);
++                videoElement.addEventListener(
++                    'ended', kickoffVideoLoop.bind(this), false);
++                videoElement.addEventListener(
++                    'canplaythrough',
++                    async () => { await videoElement.play(); });
++                break;
++            } catch (error) {
++                if (error.message === 'Not Found') {
++                    console.log(`Received 404 for videos/${video.guid}/: `
++                                + error.message.statusText);
++                    setTimeout(kickoffVideoLoop.bind(this), 2000);
++                } else {
++                    console.error(error.message);
++                    throw error;
++                }
++            }
++        }
+     }
+ }
+ 

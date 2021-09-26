@@ -13,7 +13,6 @@ from rest_framework.response import Response
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
 from requests_oauthlib import OAuth2Session
-import requests
 
 filters_location = getattr(settings, 'COMPILATIONS_FILTERS_LOCATION')
 filters_spec = spec_from_file_location(
@@ -57,6 +56,31 @@ def callback(request):
         headers={'User-Agent': USER_AGENT})
     return redirect('compilations-index')
 
+def videoHelper(video, domain):
+    """Pack information about a video into a dict"""
+    url = domain['url'](video)
+    return {
+        'url': url,
+        'name': video['data']['name'],
+        'guid': b64encode(url.encode('utf-8'))
+    }
+
+def listHelper(videos, count):
+    """Generates a list of data to return to the client"""
+    response = {
+        'count': count + int(videos['data']['dist']),
+        'after': videos['data']['after'],
+        'videos': [],
+    }
+    for video in videos['data']['children']:
+        if not 'domain' in video['data']:
+            continue
+        for domain in filters.DOMAINS:
+            if video['data']['domain'] == domain['domain'] \
+               and domain['filter'](video['data']):
+                response['videos'].append(videoHelper(video, domain))
+    return Response(response)
+
 class VideoCollectionView(viewsets.ViewSet):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
@@ -96,24 +120,7 @@ class VideoCollectionView(viewsets.ViewSet):
         videos = json.loads(response.text)
         if not videos['data']['children']:
             return Response(status=404) # No more!
-        return Response(
-            {
-                'count': count + int(videos['data']['dist']),
-                'after': videos['data']['after'],
-                'videos': [
-                    {
-                        'url': x['data']['url'],
-                        'name': x['data']['name'],
-                        'guid': b64encode(x['data']['url'].encode('utf-8'))
-                    } for x in
-                    filter(lambda y: 'domain' in y['data'] \
-                           and any(y['data']['domain'] == z['domain'] and \
-                                   z['filter'](y['data'])
-                                   for z in filters.DOMAINS),
-                           videos['data']['children'])
-                ],
-            }
-        )
+        return listHelper(videos, count)
 
     def retrieve(self, request, video):
         """Return the URL for a video"""
@@ -121,17 +128,9 @@ class VideoCollectionView(viewsets.ViewSet):
         #       URL. This is different from the .delete() endpoint, because DRF
         #       does not have great support for taking different kinds of keys.
         link = b64decode(video).decode('utf-8')
-        response = requests.get(link)
-        if not response.ok:
-            return Response(
-                status=response.status_code,
-                content_type=response.headers['Content-Type'],
-                headers=response.headers,
-                data=response.text,
-            )
         for domain in filters.DOMAINS:
             if domain['domain'] in link:
-                return Response(domain['handler'](response))
+                return domain['handler'](link)
         return Response(status=404) # If we got here, something happened.
 
     def delete(self, request, video):
@@ -145,10 +144,9 @@ class VideoCollectionView(viewsets.ViewSet):
         reddit = OAuth2Session(
             filters.CLIENT_ID, token=request.session['oauth_token'])
         response = reddit.post(REDDIT_BASE + f'/api/unsave?id={video}',
-                           headers={
-                               'User-Agent': USER_AGENT,
-                               # 'X-Modhash': request.META['X-Modhash'],
-                           },
+                               headers={
+                                   'User-Agent': USER_AGENT,
+                               },
         )
         if not response.ok:
             logging.error('compilations: %d', response.status_code)
