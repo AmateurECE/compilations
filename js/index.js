@@ -7,7 +7,7 @@
 //
 // CREATED:         07/26/2021
 //
-// LAST EDITED:     09/20/2021
+// LAST EDITED:     11/07/2021
 ////
 
 let videoList; // Global state!?
@@ -80,6 +80,7 @@ async function kickoffVideoLoop() {
     boxElement.appendChild(videoElement);
 
     let video = videoList.videos.shift();
+    document.title = `Compilations (${videoList.videos.length})`;
     let url;
     let sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
     while (true) {
