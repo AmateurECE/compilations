@@ -11,16 +11,25 @@ body {
 .video-player {
     display: flex;
     flex-direction: row;
+}
+
+.flex-space-between {
     justify-content: space-between;
 }
 
+.flex-center {
+    justify-content: center;
+}
+
 .video-box {
-    max-width: 50%;
     height: 100vh;
     display: flex;
 }
 
+.short-video-box {
+    max-width: 50%;
+}
+
 video {
     max-height: 100vh !important;
-    max-width: 50vw !important; /* We have two "view ports" */
 }

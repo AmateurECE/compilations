@@ -7,7 +7,7 @@
 //
 // CREATED:         07/26/2021
 //
-// LAST EDITED:     11/07/2021
+// LAST EDITED:     03/03/2022
 ////
 
 let videoList; // Global state!?
@@ -125,15 +125,30 @@ async function main() {
     const button = document.getElementById('start');
     button.parentNode.removeChild(button);
 
+    const params = new Proxy(new URLSearchParams(window.location.search), {
+        get: (searchParams, prop) => searchParams.get(prop),
+    });
+    const two_players = undefined === params || undefined === params.views
+          || 2 === params.views;
+
     const box1 = document.createElement('div');
     box1.classList.add('video-box');
     box1.id = 'box-1';
+
     const box2 = document.createElement('div');
     box2.classList.add('video-box');
     box2.id = 'box-2';
+
     const videoPlayer = document.getElementById('player');
+    if (two_players) {
+        box1.classList.add('short-video-box');
+        box2.classList.add('short-video-box');
+        videoPlayer.classList.add('flex-space-between');
+        videoPlayer.appendChild(box2);
+    } else {
+        videoPlayer.classList.add('flex-center');
+    }
     videoPlayer.appendChild(box1);
-    videoPlayer.appendChild(box2);
 
     const apiUrl = getMeta('api-base');
     const client = new ApiClient(apiUrl);
@@ -143,9 +158,11 @@ async function main() {
         client, elementId: 'box-1', videoBox: videoBoxOne});
     await loop1();
 
-    const loop2 = kickoffVideoLoop.bind({
-        client, elementId: 'box-2', videoBox: videoBoxTwo});
-    await loop2();
+    if (two_players) {
+        const loop2 = kickoffVideoLoop.bind({
+            client, elementId: 'box-2', videoBox: videoBoxTwo});
+        await loop2();
+    }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
