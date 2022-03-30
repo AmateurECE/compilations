@@ -32,4 +32,5 @@ body {
 
 video {
     max-height: 100vh !important;
+    max-width: 100%;
 }

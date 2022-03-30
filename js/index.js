@@ -7,7 +7,7 @@
 //
 // CREATED:         07/26/2021
 //
-// LAST EDITED:     03/03/2022
+// LAST EDITED:     03/16/2022
 ////
 
 let videoList; // Global state!?
@@ -128,8 +128,7 @@ async function main() {
     const params = new Proxy(new URLSearchParams(window.location.search), {
         get: (searchParams, prop) => searchParams.get(prop),
     });
-    const two_players = undefined === params || undefined === params.views
-          || 2 === params.views;
+    const two_players = null === params.views || "2" === params.views;
 
     const box1 = document.createElement('div');
     box1.classList.add('video-box');
