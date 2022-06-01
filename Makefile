@@ -7,33 +7,23 @@
 #
 # CREATED:	    07/27/2021
 #
-# LAST EDITED:	    08/09/2021
+# LAST EDITED:	    05/31/2022
 ###
 
 all: build.lock
 
-djangoApp = compilations
-staticDir = $(djangoApp)/static/$(djangoApp)
-jsIndex = $(staticDir)/js/index.js
+decrypt: filter.enc
+	openssl aes-256-cbc -d -a -pbkdf2 -in $< -out service/src/filter.rs
+	touch $<
 
-pythonDeps = \
-	$(shell find $(djangoApp)) \
-	MANIFEST.in \
-	setup.py
+# build.lock: $(jsIndex) filter.enc
+build.lock: filter.enc
 
-build.lock: $(jsIndex) $(pythonDeps)
-	python3 setup.py sdist
-	python3 setup.py bdist_wheel
-	touch $@
+# $(jsIndex): $(jsDeps)
+# 	npm run build
+# 	touch $@
 
-jsDeps = \
-	$(shell find js) \
-	webpack.config.js \
-	package.json \
-	package-lock.json
-
-$(jsIndex): $(jsDeps)
-	npm run build
-	touch $@
+filter.enc: service/src/filter.rs
+	openssl aes-256-cbc -a -salt -pbkdf2 -in $< -out $@
 
 ###############################################################################
