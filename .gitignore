@@ -1,6 +1,3 @@
-/manage.py
-/sandbox/
-/db.sqlite3
 /node_modules/
-/service/target/
-/service/src/filter.rs
+/compilations/target/
+/compilations/src/filter.rs
