@@ -50,12 +50,15 @@ struct Args {
 
 #[tokio::main]
 async fn main() {
+    let args = Args::parse();
+
+    let secret = load_secret(&args.secret_file).await;
+    let configuration = load_configuration(&args.conf_file).await;
+
     let session_config = AxumSessionConfig::default()
         .with_table_name("volatile");
     let session_store = AxumSessionStore::new(None, session_config);
 
-    let secret = load_secret().await;
-    let configuration = load_configuration().await;
     let resolver = Arc::new(
         ResolverBuilder::default()
             .hostname(configuration.hostname)

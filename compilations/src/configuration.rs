@@ -26,11 +26,11 @@ pub struct Secret {
 }
 
 // Load the client secret from the filesystem.
-pub async fn load_secret() -> Secret {
+pub async fn load_secret(file_path: &str) -> Secret {
     todo!()
 }
 
-pub async fn load_configuration() -> Configuration {
+pub async fn load_configuration(file_path: &str) -> Configuration {
     todo!()
 }
 
