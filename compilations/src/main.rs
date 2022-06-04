@@ -19,21 +19,24 @@ use axum::{
 use axum_database_sessions::{
     AxumSession, AxumSessionConfig, AxumSessionStore, AxumSessionLayer,
 };
-
 use clap::Parser;
-
 use oauth2::{
     AuthUrl, AuthorizationCode, basic::BasicClient, ClientId, ClientSecret,
     CsrfToken, RedirectUrl, reqwest::{async_http_client}, Scope, TokenUrl,
 };
-
 use serde::{Serialize, Deserialize};
 
-const CLIENT_ID: &'static str = "";
-const AUTH_URL: &'static str = "";
-const TOKEN_URL: &'static str = "";
-const REDIRECT_URL: &'static str = "";
+mod resolver;
+use resolver::{Resolver, ResolverBuilder};
+
+const REDIRECT_URL: &'static str = "/callback";
+const AUTH_URL: &'static str = "https://www.reddit.com/api/v1/authorize";
+const TOKEN_URL: &'static str = "https://www.reddit.com/api/v1/access_token";
+const USER_AGENT: &'static str =
+    "edtwardy-savedapi/1.0;Ethan D. Twardy <ethan.twardy@gmail.com>";
+const REDDIT_BASE: &'static str = "https://oauth.reddit.com";
 const CSRF_TOKEN_KEY: &'static str = "csrf_token";
+const APP_ROUTE_KEY: &'static str = "app";
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about = None, long_about = None)]
@@ -47,11 +50,14 @@ struct Args {
 
 #[derive(Serialize, Deserialize)]
 struct Configuration {
-    pub address: String,
+    pub listen_address: String,
+    pub script_name: Option<String>,
+    pub hostname: String,
 }
 
 #[derive(Serialize, Deserialize)]
 struct Secret {
+    pub id: String,
     pub secret: String,
 }
 
@@ -71,7 +77,7 @@ async fn login(session: AxumSession, client: Arc<BasicClient>) -> Redirect {
 // Redirect callback invoked by the API server.
 async fn redirect_callback(
     Query(params): Query<HashMap<String, String>>, session: AxumSession,
-    client: Arc<BasicClient>
+    client: Arc<BasicClient>, resolver: Arc<Resolver>
 ) -> Result<Redirect, StatusCode> {
     // Once the user has been redirected to the redirect URL, we have access to
     // the authorization code. For security reasons, we verify that the `state`
@@ -92,7 +98,7 @@ async fn redirect_callback(
     session.set("token", token_result).await;
 
     // Route "/app" serves the wasm frontend application.
-    Ok(Redirect::temporary("/app"))
+    Ok(Redirect::temporary(&resolver.get(APP_ROUTE_KEY).unwrap()))
 }
 
 async fn index() -> String {
@@ -100,7 +106,7 @@ async fn index() -> String {
 }
 
 // Load the client secret from the filesystem.
-async fn load_secret() -> String {
+async fn load_secret() -> Secret {
     todo!()
 }
 
@@ -114,14 +120,25 @@ async fn main() {
         .with_table_name("volatile");
     let session_store = AxumSessionStore::new(None, session_config);
 
-    let client_secret = load_secret().await;
+    let secret = load_secret().await;
     let configuration = load_configuration().await;
+    let resolver = Arc::new(
+        ResolverBuilder::default()
+            .hostname(configuration.hostname)
+            .script_name(configuration.script_name.clone())
+            .route(APP_ROUTE_KEY.to_string(), REDIRECT_URL.to_string())
+            .build()
+            .unwrap()
+    );
+
     let client = Arc::new(BasicClient::new(
-        ClientId::new(CLIENT_ID.to_string()),
-        Some(ClientSecret::new(client_secret)),
+        ClientId::new(secret.id.to_string()),
+        Some(ClientSecret::new(secret.secret)),
         AuthUrl::new(AUTH_URL.to_string()).unwrap(),
         Some(TokenUrl::new(TOKEN_URL.to_string()).unwrap())
-    ).set_redirect_uri(RedirectUrl::new(REDIRECT_URL.to_string()).unwrap()));
+    ).set_redirect_uri(RedirectUrl::new(
+        resolver.get(APP_ROUTE_KEY).unwrap()).unwrap())
+    );
 
     let app = Router::new()
         .route("/login", get({
@@ -130,19 +147,28 @@ async fn main() {
         }))
         .route("/callback", get({
             let client = client.clone();
+            let resolver = resolver.clone();
             move |params, session| {
-                redirect_callback(params, session, client)
+                redirect_callback(params, session, client, resolver)
             }
         }))
         .route("/app", get(index))
         .layer(AxumSessionLayer::new(session_store))
         ;
 
-    // Serve it
-    axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let address = configuration.listen_address.parse().unwrap();
+    if let Some(script_name) = configuration.script_name {
+        let app = Router::new().nest(&script_name, app);
+        axum::Server::bind(&address)
+            .serve(app.into_make_service())
+            .await
+            .unwrap();
+    } else {
+        axum::Server::bind(&address)
+            .serve(app.into_make_service())
+            .await
+            .unwrap();
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

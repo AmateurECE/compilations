@@ -12,3 +12,4 @@ oauth2 = "4.1"
 axum_database_sessions = "2.0.1"
 clap = { version = "3.1", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
+derive_builder = "0.11"
