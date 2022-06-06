@@ -10,6 +10,7 @@
 // LAST EDITED:     06/06/2022
 ////
 
+use std::error::Error;
 use std::sync::Arc;
 
 use axum::{routing::get, Router,};
@@ -49,11 +50,11 @@ struct Args {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
-    let secret = load_secret(&args.secret_file).await.unwrap();
-    let configuration = load_configuration(&args.conf_file).await.unwrap();
+    let secret = load_secret(&args.secret_file).await?;
+    let configuration = load_configuration(&args.conf_file).await?;
 
     let session_config = AxumSessionConfig::default()
         .with_table_name("volatile");
@@ -64,8 +65,7 @@ async fn main() {
             .hostname(configuration.hostname)
             .script_name(configuration.script_name.clone())
             .route(APP_ROUTE_KEY.to_string(), REDIRECT_URL.to_string())
-            .build()
-            .unwrap()
+            .build()?
     );
 
     let client = Arc::new(BasicClient::new(
@@ -74,7 +74,7 @@ async fn main() {
         AuthUrl::new(AUTH_URL.to_string()).unwrap(),
         Some(TokenUrl::new(TOKEN_URL.to_string()).unwrap())
     ).set_redirect_uri(RedirectUrl::new(
-        resolver.get(APP_ROUTE_KEY).unwrap()).unwrap())
+        resolver.get(APP_ROUTE_KEY).unwrap())?)
     );
 
     let app = Router::new()
@@ -98,14 +98,14 @@ async fn main() {
         let app = Router::new().nest(&script_name, app);
         axum::Server::bind(&address)
             .serve(app.into_make_service())
-            .await
-            .unwrap();
+            .await?;
     } else {
         axum::Server::bind(&address)
             .serve(app.into_make_service())
-            .await
-            .unwrap();
+            .await?;
     }
+
+    Ok(())
 }
 
 ///////////////////////////////////////////////////////////////////////////////
