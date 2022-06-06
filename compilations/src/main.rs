@@ -7,7 +7,7 @@
 //
 // CREATED:         05/23/2022
 //
-// LAST EDITED:     06/03/2022
+// LAST EDITED:     06/06/2022
 ////
 
 use std::sync::Arc;
@@ -52,8 +52,8 @@ struct Args {
 async fn main() {
     let args = Args::parse();
 
-    let secret = load_secret(&args.secret_file).await;
-    let configuration = load_configuration(&args.conf_file).await;
+    let secret = load_secret(&args.secret_file).await.unwrap();
+    let configuration = load_configuration(&args.conf_file).await.unwrap();
 
     let session_config = AxumSessionConfig::default()
         .with_table_name("volatile");
