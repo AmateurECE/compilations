@@ -7,7 +7,7 @@
 //
 // CREATED:         06/03/2022
 //
-// LAST EDITED:     06/03/2022
+// LAST EDITED:     06/11/2022
 ////
 
 use std::collections::HashMap;
@@ -24,6 +24,9 @@ pub struct Resolver {
 
 impl ResolverBuilder {
     pub fn route(&mut self, app_name: String, path: String) -> &mut Self {
+        if self.routes.is_none() {
+            self.routes = Some(HashMap::new())
+        }
         self.routes.as_mut().unwrap().insert(app_name, path);
         self
     }
@@ -33,8 +36,17 @@ impl Resolver {
     pub fn get(&self, app_name: &str) -> Option<String> {
         match self.routes.get(app_name) {
             Some(path) => Some(
+                self.script_name.as_deref().unwrap_or("").to_owned() + path
+            ),
+            None => None,
+        }
+    }
+
+    pub fn get_full(&self, app_name: &str) -> Option<String> {
+        match self.routes.get(app_name) {
+            Some(path) => Some(
                 "https://".to_string() + &self.hostname
-                    + &self.script_name.as_ref().unwrap_or(&String::new())
+                    + self.script_name.as_deref().unwrap_or("")
                     + path
             ),
             None => None,

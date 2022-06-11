@@ -1,3 +1,5 @@
 /node_modules/
 /compilations/target/
 /compilations/src/filter.rs
+/frontend/dist/
+/frontend/target/

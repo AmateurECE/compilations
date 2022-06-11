@@ -7,7 +7,7 @@
 //
 // CREATED:         06/03/2022
 //
-// LAST EDITED:     06/03/2022
+// LAST EDITED:     06/11/2022
 ////
 
 use std::collections::HashMap;
@@ -22,7 +22,6 @@ use oauth2::{
 
 use crate::resolver::Resolver;
 use crate::CSRF_TOKEN_KEY;
-use crate::APP_ROUTE_KEY;
 
 // Log the user into the application
 pub async fn login(session: AxumSession, client: Arc<BasicClient>) ->
@@ -30,7 +29,9 @@ pub async fn login(session: AxumSession, client: Arc<BasicClient>) ->
 {
     let (auth_url, csrf_token) = client
         .authorize_url(CsrfToken::new_random)
-        .add_scope(Scope::new("user".to_string()))
+        .add_scope(Scope::new("history".to_string()))
+        .add_scope(Scope::new("identity".to_string()))
+        .add_scope(Scope::new("save".to_string()))
         .url();
     session.set(CSRF_TOKEN_KEY, csrf_token).await;
 
@@ -47,6 +48,7 @@ pub async fn redirect_callback(
     // Once the user has been redirected to the redirect URL, we have access to
     // the authorization code. For security reasons, we verify that the `state`
     // parameter returned by the server matches `csrf_state`.
+    // TODO: Check for "error" query parameter here.
     let state = params.get("state").unwrap();
     let csrf_token: String = session.get(CSRF_TOKEN_KEY).await
         .unwrap_or(String::new());
@@ -55,19 +57,16 @@ pub async fn redirect_callback(
     }
 
     // Now you can trade it for an access token.
+    let code = params.get("code").unwrap().to_string();
     let token_result = client
-        .exchange_code(AuthorizationCode::new("auth code".to_string()))
+        .exchange_code(AuthorizationCode::new(code))
         .request_async(async_http_client)
         .await
         .unwrap();
     session.set("token", token_result).await;
 
     // Route "/app" serves the wasm frontend application.
-    Ok(Redirect::temporary(&resolver.get(APP_ROUTE_KEY).unwrap()))
-}
-
-pub async fn index() -> String {
-    "Hello, World!".to_string()
+    Ok(Redirect::temporary(&resolver.get("app").unwrap()))
 }
 
 ///////////////////////////////////////////////////////////////////////////////
