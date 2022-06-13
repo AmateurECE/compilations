@@ -12,6 +12,11 @@
 
 use yew::prelude::*;
 
+#[derive(PartialEq, Properties)]
+pub struct VideoBoxProperties {
+    pub url: String,
+}
+
 pub struct VideoBox;
 
 impl Component for VideoBox {

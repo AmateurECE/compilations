@@ -12,6 +12,7 @@
 
 use yew::prelude::*;
 
+mod filter;
 mod form;
 mod video_box;
 mod view;
