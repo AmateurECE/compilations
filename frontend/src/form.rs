@@ -11,26 +11,45 @@
 ////
 
 use yew::prelude::*;
+use crate::view::ApplicationData;
 
 #[derive(Clone, Default, PartialEq, Properties)]
-pub struct AppFormModel;
+pub struct AppFormModel {
+    pub callback: Callback<ApplicationData>,
+}
+
+pub enum AppFormMessage {
+    Start,
+}
 
 pub struct AppForm;
 impl Component for AppForm {
-    type Message = ();
+    type Message = AppFormMessage;
     type Properties = AppFormModel;
 
     fn create(_context: &Context<Self>) -> Self {
         Self
     }
 
-    fn update(&mut self, _context: &Context<Self>, message: Self::Message) ->
+    fn update(&mut self, context: &Context<Self>, message: Self::Message) ->
         bool
-    { false }
+    {
+        match message {
+            Start => {
+                context.props().callback.emit(ApplicationData::default());
+                false
+            },
+        }
+    }
 
-    fn view(&self, _context: &Context<Self>) -> Html {
+    fn view(&self, context: &Context<Self>) -> Html {
         html! {
-            <p>{ "ModelForm" }</p>
+            <div>
+                <button onclick={context.link().callback(|e: MouseEvent| {
+                    e.prevent_default();
+                    AppFormMessage::Start
+                })}>{ "Start" }</button>
+            </div>
         }
     }
 }

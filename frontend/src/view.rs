@@ -12,8 +12,13 @@
 
 use yew::prelude::*;
 
+#[derive(Clone, Default, PartialEq)]
+pub struct ApplicationData;
+
 #[derive(Clone, PartialEq, Properties)]
-pub struct AppViewModel;
+pub struct AppViewModel {
+    pub data: ApplicationData,
+}
 
 pub struct AppView;
 impl Component for AppView {

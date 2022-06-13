@@ -16,31 +16,55 @@ mod form;
 mod view;
 
 use form::{AppForm, AppFormModel};
-use view::{AppView, AppViewModel};
+use view::{AppView, AppViewModel, ApplicationData};
 
 // Frontend top-level application component
-enum Model {
+enum Switch {
     Form(AppFormModel),
     View(AppViewModel),
 }
 
+enum ModelMessage {
+    StartApp(ApplicationData),
+}
+
+struct Model {
+    switch: Switch,
+}
+
 impl Component for Model {
-    type Message = ();
+    type Message = ModelMessage;
     type Properties = ();
 
-    fn create(_context: &Context<Self>) -> Self {
-        Self::Form(AppFormModel::default())
+    fn create(context: &Context<Self>) -> Self {
+        Self {
+            switch: Switch::Form(
+                AppFormModel {
+                    callback: context.link().callback(|data: ApplicationData| {
+                        ModelMessage::StartApp(data)
+                    })
+                }),
+        }
     }
 
     fn update(&mut self, _context: &Context<Self>, message: Self::Message) ->
         bool
-    { false }
+    {
+        match message {
+            ModelMessage::StartApp(data) => {
+                self.switch = Switch::View(AppViewModel {
+                    data,
+                });
+                true
+            }
+        }
+    }
 
     fn view(&self, _context: &Context<Self>) -> Html {
         html! {
-            if let Model::Form(form) = &self {
+            if let Switch::Form(form) = &self.switch {
                 <AppForm ..form.clone() />
-            } else if let Model::View(view) = &self {
+            } else if let Switch::View(view) = &self.switch {
                 <AppView ..view.clone() />
             }
         }
