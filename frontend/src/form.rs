@@ -35,7 +35,7 @@ impl Component for AppForm {
         bool
     {
         match message {
-            Start => {
+            AppFormMessage::Start => {
                 context.props().callback.emit(ApplicationData::default());
                 false
             },

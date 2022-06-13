@@ -13,6 +13,7 @@
 use yew::prelude::*;
 
 mod form;
+mod video_box;
 mod view;
 
 use form::{AppForm, AppFormModel};

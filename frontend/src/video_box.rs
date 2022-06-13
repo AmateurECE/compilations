@@ -1,9 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
-// NAME:            view.rs
+// NAME:            video_box.rs
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Application main view.
+// DESCRIPTION:     A component for each video box.
 //
 // CREATED:         06/13/2022
 //
@@ -11,20 +11,12 @@
 ////
 
 use yew::prelude::*;
-use crate::video_box::VideoBox;
 
-#[derive(Clone, Default, PartialEq)]
-pub struct ApplicationData;
+pub struct VideoBox;
 
-#[derive(Clone, PartialEq, Properties)]
-pub struct AppViewModel {
-    pub data: ApplicationData,
-}
-
-pub struct AppView;
-impl Component for AppView {
+impl Component for VideoBox {
     type Message = ();
-    type Properties = AppViewModel;
+    type Properties = ();
 
     fn create(_context: &Context<Self>) -> Self {
         Self
@@ -36,10 +28,7 @@ impl Component for AppView {
 
     fn view(&self, _context: &Context<Self>) -> Html {
         html! {
-            <main>
-                <VideoBox />
-                <VideoBox />
-            </main>
+            <p>{ "video-box" }</p>
         }
     }
 }
