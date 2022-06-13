@@ -37,8 +37,10 @@ impl Component for AppView {
     fn view(&self, _context: &Context<Self>) -> Html {
         html! {
             <main>
-                <VideoBox />
-                <VideoBox />
+                <div class="video-player flex-space-between">
+                    <VideoBox url={"".to_string()} />
+                    <VideoBox url={"".to_string()} />
+                </div>
             </main>
         }
     }

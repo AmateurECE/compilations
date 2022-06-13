@@ -21,7 +21,7 @@ pub struct VideoBox;
 
 impl Component for VideoBox {
     type Message = ();
-    type Properties = ();
+    type Properties = VideoBoxProperties;
 
     fn create(_context: &Context<Self>) -> Self {
         Self
@@ -33,7 +33,8 @@ impl Component for VideoBox {
 
     fn view(&self, _context: &Context<Self>) -> Html {
         html! {
-            <p>{ "video-box" }</p>
+            <div class="short-video-box">
+            </div>
         }
     }
 }
