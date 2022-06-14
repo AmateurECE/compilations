@@ -7,7 +7,7 @@
 //
 // CREATED:         05/23/2022
 //
-// LAST EDITED:     06/11/2022
+// LAST EDITED:     06/14/2022
 ////
 
 use std::error::Error;
@@ -26,23 +26,22 @@ use oauth2::{
     AuthUrl, basic::BasicClient, ClientId, ClientSecret, RedirectUrl, TokenUrl,
 };
 use tower_http::trace::TraceLayer;
-use tracing::{event, Level};
 
 mod configuration;
 mod endpoints;
 mod resolver;
 
 use configuration::{load_secret, load_configuration};
-use endpoints::{login, redirect_callback};
+use endpoints::{api_v1_me, login, redirect_callback};
 use resolver::ResolverBuilder;
 
 const APP_URL: &'static str = "/app";
 const REDIRECT_URL: &'static str = "/callback";
 const AUTH_URL: &'static str = "https://www.reddit.com/api/v1/authorize";
 const TOKEN_URL: &'static str = "https://www.reddit.com/api/v1/access_token";
-const USER_AGENT: &'static str =
+pub(crate) const USER_AGENT: &'static str =
     "edtwardy-savedapi/1.0;Ethan D. Twardy <ethan.twardy@gmail.com>";
-const REDDIT_BASE: &'static str = "https://oauth.reddit.com";
+pub(crate) const REDDIT_BASE: &'static str = "https://oauth.reddit.com";
 pub(crate) const CSRF_TOKEN_KEY: &'static str = "csrf_token";
 
 static FRONTEND_DIR: Dir<'_> =
@@ -83,6 +82,10 @@ async fn frontend_resource(Path(path): Path<String>) -> impl IntoResponse {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    // Configure tower-http to trace requests/responses
+    std::env::set_var("RUST_LOG", "tower_http=trace");
+    tracing_subscriber::fmt::init();
+
     let args = Args::parse();
 
     let secret = load_secret(&args.secret_file).await?;
@@ -109,7 +112,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     ).set_redirect_uri(RedirectUrl::new(
         resolver.get_full("redirect").unwrap())?));
 
-    tracing_subscriber::fmt::init();
     let app = Router::new()
         .route("/login", get({
             let client = client.clone();
@@ -121,6 +123,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let resolver = resolver.clone();
             move |params, session| {
                 redirect_callback(params, session, client, resolver)
+            }
+        }))
+        .route("/api/v1/me", get({
+            move |session| {
+                api_v1_me("/api/v1/me", session)
             }
         }))
         .layer(AxumSessionLayer::new(session_store))

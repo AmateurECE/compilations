@@ -7,7 +7,7 @@
 //
 // CREATED:         06/03/2022
 //
-// LAST EDITED:     06/11/2022
+// LAST EDITED:     06/14/2022
 ////
 
 use std::collections::HashMap;
@@ -16,12 +16,14 @@ use std::sync::Arc;
 use axum::{extract::Query, http::StatusCode, response::Redirect};
 use axum_database_sessions::AxumSession;
 use oauth2::{
-    AuthorizationCode, basic::BasicClient, CsrfToken,
-    reqwest::{async_http_client}, Scope,
+    AccessToken, AuthorizationCode, basic::BasicClient, CsrfToken,
+    reqwest::{async_http_client}, Scope, TokenResponse,
 };
+use reqwest_middleware::ClientWithMiddleware;
+use tracing::{event, Level};
 
 use crate::resolver::Resolver;
-use crate::CSRF_TOKEN_KEY;
+use crate::{CSRF_TOKEN_KEY, REDDIT_BASE, USER_AGENT};
 
 // Log the user into the application
 pub async fn login(session: AxumSession, client: Arc<BasicClient>) ->
@@ -63,10 +65,57 @@ pub async fn redirect_callback(
         .request_async(async_http_client)
         .await
         .unwrap();
-    session.set("token", token_result).await;
+    session.set("token", token_result.access_token().clone()).await;
 
     // Route "/app" serves the wasm frontend application.
     Ok(Redirect::temporary(&resolver.get("app").unwrap()))
+}
+
+async fn get_user_client(session: &AxumSession) ->
+    Result<ClientWithMiddleware, StatusCode>
+{
+    // Initialize a reqwest client for this session
+    let token: AccessToken = session.get("token").await
+        .ok_or(StatusCode::UNAUTHORIZED)?;
+
+    let mut headers = reqwest::header::HeaderMap::new();
+    let auth = "bearer ".to_string() + token.secret().as_str();
+    let mut auth = reqwest::header::HeaderValue::from_str(&auth).map_err(|e| {
+        event!(Level::ERROR, "{:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
+    auth.set_sensitive(true);
+    headers.insert(reqwest::header::AUTHORIZATION, auth);
+
+    let client = reqwest::Client::builder()
+        .user_agent(USER_AGENT)
+        .default_headers(headers)
+        .build()
+        .map_err(|e| {
+            event!(Level::ERROR, "{:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    let client = reqwest_middleware::ClientBuilder::new(client)
+        .with(reqwest_tracing::TracingMiddleware)
+        .build();
+    Ok(client)
+}
+
+pub async fn api_v1_me(reddit_endpoint: &'static str, session: AxumSession) ->
+    Result<String, StatusCode>
+{
+    let client = get_user_client(&session).await?;
+    let response = client.get(REDDIT_BASE.to_string() + reddit_endpoint)
+        .send()
+        .await
+        .map_err(|e| {
+            event!(Level::ERROR, "{:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(response.text().await.map_err(|e| {
+        event!(Level::ERROR, "{:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
