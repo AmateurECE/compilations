@@ -127,8 +127,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }))
         .route("/api/v1/me", get({
-            move |session| {
-                api::proxy_simple("/api/v1/me", session)
+            move |params, session| {
+                api::proxy_simple_get("/api/v1/me", params, session)
             }
         }))
         .layer(AxumSessionLayer::new(session_store))

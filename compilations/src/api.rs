@@ -10,8 +10,10 @@
 // LAST EDITED:     06/16/2022
 ////
 
+use std::collections::HashMap;
+
 use axum_database_sessions::AxumSession;
-use axum::http::StatusCode;
+use axum::{extract::Query, http::StatusCode};
 use oauth2::AccessToken;
 use reqwest_middleware::ClientWithMiddleware;
 use tracing::{event, Level};
@@ -52,12 +54,14 @@ async fn get_user_client(session: &AxumSession) ->
 // Public API
 ////
 
-pub async fn proxy_simple(
-    reddit_endpoint: &'static str, session: AxumSession
+pub async fn proxy_simple_get(
+    reddit_endpoint: &'static str,
+    Query(params): Query<HashMap<String, String>>, session: AxumSession
 ) -> Result<String, StatusCode>
 {
     let client = get_user_client(&session).await?;
     let response = client.get(REDDIT_BASE.to_string() + reddit_endpoint)
+        .query(&params)
         .send()
         .await
         .map_err(|e| {
