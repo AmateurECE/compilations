@@ -30,10 +30,12 @@ use tower_http::trace::TraceLayer;
 mod api;
 mod configuration;
 mod endpoints;
+mod rate_limit;
 mod resolver;
 
 use configuration::{load_secret, load_configuration};
 use endpoints::{login, redirect_callback};
+use rate_limit::RateLimiter;
 use resolver::ResolverBuilder;
 
 const APP_URL: &'static str = "/app";
@@ -96,6 +98,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_table_name("volatile");
     let session_store = AxumSessionStore::new(None, session_config);
 
+    let (rate_limiter, responder) = RateLimiter::new();
+
     let resolver = Arc::new(
         ResolverBuilder::default()
             .hostname(configuration.hostname)
@@ -127,8 +131,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }))
         .route("/api/v1/me", get({
+            let rate_limiter = rate_limiter.clone();
             move |params, session| {
-                api::proxy_simple_get("/api/v1/me", params, session)
+                api::proxy_simple_get("/api/v1/me", params, session,
+                                      rate_limiter)
             }
         }))
         .layer(AxumSessionLayer::new(session_store))
@@ -136,17 +142,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ;
 
     let address = configuration.listen_address.parse().unwrap();
-    if let Some(script_name) = configuration.script_name {
-        let app = Router::new().nest(&script_name, app);
-        axum::Server::bind(&address)
-            .serve(app.into_make_service())
-            .await?;
-    } else {
-        axum::Server::bind(&address)
-            .serve(app.into_make_service())
-            .await?;
-    }
+    let server = match configuration.script_name {
+        Some(script_name) => {
+            let app = Router::new().nest(&script_name, app);
+            axum::Server::bind(&address).serve(app.into_make_service())
+        },
+        None => {
+            axum::Server::bind(&address).serve(app.into_make_service())
+        },
+    };
 
+    tokio::select! {
+        result = responder.spawn() => { result.unwrap() }
+        result = server => { result.unwrap() }
+    };
     Ok(())
 }
 

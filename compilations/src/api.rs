@@ -19,6 +19,7 @@ use reqwest_middleware::ClientWithMiddleware;
 use tracing::{event, Level};
 use crate::REDDIT_BASE;
 use crate::USER_AGENT;
+use crate::rate_limit::RateLimiter;
 
 async fn get_user_client(session: &AxumSession) ->
     Result<ClientWithMiddleware, StatusCode>
@@ -56,13 +57,15 @@ async fn get_user_client(session: &AxumSession) ->
 
 pub async fn proxy_simple_get(
     reddit_endpoint: &'static str,
-    Query(params): Query<HashMap<String, String>>, session: AxumSession
+    Query(params): Query<HashMap<String, String>>, session: AxumSession,
+    mut rate_limiter: RateLimiter,
 ) -> Result<String, StatusCode>
 {
     let client = get_user_client(&session).await?;
-    let response = client.get(REDDIT_BASE.to_string() + reddit_endpoint)
-        .query(&params)
-        .send()
+    let response = rate_limiter.send(
+        client.get(REDDIT_BASE.to_string() + reddit_endpoint)
+            .query(&params)
+    )
         .await
         .map_err(|e| {
             event!(Level::ERROR, "{:?}", e);
