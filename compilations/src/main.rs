@@ -7,7 +7,7 @@
 //
 // CREATED:         05/23/2022
 //
-// LAST EDITED:     06/14/2022
+// LAST EDITED:     06/16/2022
 ////
 
 use std::error::Error;
@@ -27,12 +27,13 @@ use oauth2::{
 };
 use tower_http::trace::TraceLayer;
 
+mod api;
 mod configuration;
 mod endpoints;
 mod resolver;
 
 use configuration::{load_secret, load_configuration};
-use endpoints::{api_v1_me, login, redirect_callback};
+use endpoints::{login, redirect_callback};
 use resolver::ResolverBuilder;
 
 const APP_URL: &'static str = "/app";
@@ -127,7 +128,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }))
         .route("/api/v1/me", get({
             move |session| {
-                api_v1_me("/api/v1/me", session)
+                api::proxy_simple("/api/v1/me", session)
             }
         }))
         .layer(AxumSessionLayer::new(session_store))
