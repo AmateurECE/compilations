@@ -7,10 +7,13 @@
 //
 // CREATED:         06/13/2022
 //
-// LAST EDITED:     06/13/2022
+// LAST EDITED:     06/16/2022
 ////
 
+use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use crate::api::get_identity;
+use crate::filter::IdentityFilter;
 use crate::view::ApplicationData;
 
 #[derive(Clone, Default, PartialEq, Properties)]
@@ -19,16 +22,29 @@ pub struct AppFormModel {
 }
 
 pub enum AppFormMessage {
+    Identity(String),
     Start,
 }
 
-pub struct AppForm;
+#[derive(Default)]
+pub struct AppForm {
+    username: Option<String>,
+}
+
 impl Component for AppForm {
     type Message = AppFormMessage;
     type Properties = AppFormModel;
 
-    fn create(_context: &Context<Self>) -> Self {
-        Self
+    fn create(context: &Context<Self>) -> Self {
+        use AppFormMessage::*;
+        let link = context.link().callback(|data| Identity(data));
+        spawn_local(async move {
+            let identity = get_identity().await.unwrap();
+            let username = IdentityFilter::new(identity).username();
+            link.emit(username.unwrap());
+        });
+
+        Self::default()
     }
 
     fn update(&mut self, context: &Context<Self>, message: Self::Message) ->
@@ -36,20 +52,33 @@ impl Component for AppForm {
     {
         match message {
             AppFormMessage::Start => {
-                context.props().callback.emit(ApplicationData::default());
+                let data = ApplicationData {
+                    username: self.username.as_ref().unwrap().clone(),
+                };
+                context.props().callback.emit(data);
                 false
+            },
+            AppFormMessage::Identity(data) => {
+                self.username = Some(data.clone());
+                web_sys::console::log_1(&data.into());
+                true
             },
         }
     }
 
     fn view(&self, context: &Context<Self>) -> Html {
         html! {
-            <div>
-                <button onclick={context.link().callback(|e: MouseEvent| {
-                    e.prevent_default();
-                    AppFormMessage::Start
-                })}>{ "Start" }</button>
-            </div>
+            if let Some(username) = &self.username {
+                <div>
+                    <p class="text">{ {"u/".to_string()} + username }</p>
+                    <button onclick={context.link().callback(|e: MouseEvent| {
+                        e.prevent_default();
+                        AppFormMessage::Start
+                    })}>{ "Start" }</button>
+                    </div>
+            } else {
+                <p>{ "Loading..." }</p>
+            }
         }
     }
 }

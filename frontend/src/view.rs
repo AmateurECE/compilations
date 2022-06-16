@@ -7,14 +7,16 @@
 //
 // CREATED:         06/13/2022
 //
-// LAST EDITED:     06/13/2022
+// LAST EDITED:     06/16/2022
 ////
 
 use yew::prelude::*;
 use crate::video_box::VideoBox;
 
 #[derive(Clone, Default, PartialEq)]
-pub struct ApplicationData;
+pub struct ApplicationData {
+    pub username: String,
+}
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct AppViewModel {
