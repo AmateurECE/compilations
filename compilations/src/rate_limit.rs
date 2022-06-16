@@ -3,7 +3,7 @@
 //
 // AUTHOR:          Ethan D. Twardy <ethan.twardy@gmail.com>
 //
-// DESCRIPTION:     Unit that enforces a 30 req/min rate limit on all clients.
+// DESCRIPTION:     Unit that enforces a 0.5 req/sec rate limit on all clients.
 //
 // CREATED:         06/16/2022
 //
@@ -11,7 +11,9 @@
 ////
 
 use reqwest_middleware::{Error, RequestBuilder};
-use tokio::{sync::{mpsc, oneshot}, task::JoinError};
+use tokio::{
+    sync::{mpsc, oneshot}, task::JoinError, time::{sleep, Duration},
+};
 
 type ResponseResult = Result<reqwest::Response, Error>;
 
@@ -32,8 +34,10 @@ impl ResponderTask {
     pub async fn spawn(mut self) -> Result<(), JoinError> {
         let task = tokio::spawn(async move {
             while let Some((request, channel)) = self.rx.recv().await {
+                let delay = sleep(Duration::from_secs(2));
                 let response = request.send().await;
                 channel.send(response).unwrap();
+                delay.await;
             }
         });
 
