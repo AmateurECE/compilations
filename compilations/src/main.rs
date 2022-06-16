@@ -133,8 +133,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/api/v1/me", get({
             let rate_limiter = rate_limiter.clone();
             move |params, session| {
-                api::proxy_simple_get("/api/v1/me", params, session,
-                                      rate_limiter)
+                let path = "/api/v1/me".to_string();
+                api::proxy_simple_get(path, params, session, rate_limiter)
+            }
+        }))
+        .route("/user/:username/saved", get({
+            let rate_limiter = rate_limiter.clone();
+            move |Path(username): Path<String>, params, session| {
+                let path = "/user/".to_string() + &username + "/saved";
+                api::proxy_simple_get(path, params, session, rate_limiter)
             }
         }))
         .layer(AxumSessionLayer::new(session_store))

@@ -56,14 +56,13 @@ async fn get_user_client(session: &AxumSession) ->
 ////
 
 pub async fn proxy_simple_get(
-    reddit_endpoint: &'static str,
-    Query(params): Query<HashMap<String, String>>, session: AxumSession,
-    mut rate_limiter: RateLimiter,
+    reddit_endpoint: String, Query(params): Query<HashMap<String, String>>,
+    session: AxumSession, mut rate_limiter: RateLimiter,
 ) -> Result<String, StatusCode>
 {
     let client = get_user_client(&session).await?;
     let response = rate_limiter.send(
-        client.get(REDDIT_BASE.to_string() + reddit_endpoint)
+        client.get(REDDIT_BASE.to_string() + &reddit_endpoint)
             .query(&params)
     )
         .await
