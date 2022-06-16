@@ -10,7 +10,10 @@
 // LAST EDITED:     06/16/2022
 ////
 
+use js_sys::Array;
+use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use crate::api::PostCollection;
 use crate::video_box::VideoBox;
 
 #[derive(Clone, Default, PartialEq)]
@@ -23,27 +26,57 @@ pub struct AppViewModel {
     pub data: ApplicationData,
 }
 
-pub struct AppView;
+pub enum AppViewMessage {
+    ReceivedList((Array, PostCollection)),
+}
+
+#[derive(Default)]
+pub struct AppView {
+    post_collection: Option<PostCollection>,
+    video_list: Option<Array>,
+}
+
 impl Component for AppView {
-    type Message = ();
+    type Message = AppViewMessage;
     type Properties = AppViewModel;
 
-    fn create(_context: &Context<Self>) -> Self {
-        Self
+    fn create(context: &Context<Self>) -> Self {
+        use AppViewMessage::*;
+        let link = context.link()
+            .callback(|(value, collection)| ReceivedList((value, collection)));
+        let username = context.props().data.username.clone();
+        spawn_local(async move {
+            let mut collection = PostCollection::new(&username);
+            let response = collection.next().await.unwrap();
+            link.emit((response, collection));
+        });
+
+        Self::default()
     }
 
-    fn update(&mut self, _context: &Context<Self>, _message: Self::Message) ->
+    fn update(&mut self, _context: &Context<Self>, message: Self::Message) ->
         bool
-    { false }
+    {
+        use AppViewMessage::*;
+        match message {
+            ReceivedList((value, collection)) => {
+                self.post_collection = Some(collection);
+                self.video_list = Some(value);
+                true
+            }
+        }
+    }
 
     fn view(&self, _context: &Context<Self>) -> Html {
         html! {
-            <main>
-                <div class="video-player flex-space-between">
-                    <VideoBox url={"".to_string()} />
-                    <VideoBox url={"".to_string()} />
-                </div>
-            </main>
+            if let Some(_) = &self.video_list {
+                <main>
+                    <div class="video-player flex-space-between">
+                        <VideoBox url={"".to_string()} />
+                        <VideoBox url={"".to_string()} />
+                    </div>
+                </main>
+            }
         }
     }
 }
