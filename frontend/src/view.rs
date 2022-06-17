@@ -7,13 +7,14 @@
 //
 // CREATED:         06/13/2022
 //
-// LAST EDITED:     06/16/2022
+// LAST EDITED:     06/17/2022
 ////
 
 use js_sys::Array;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use crate::api::PostCollection;
+use crate::filter::Post;
 use crate::video_box::VideoBox;
 
 #[derive(Clone, Default, PartialEq)]
@@ -34,6 +35,8 @@ pub enum AppViewMessage {
 pub struct AppView {
     post_collection: Option<PostCollection>,
     video_list: Option<Array>,
+    first_post: Option<Post>,
+    second_post: Option<Post>,
 }
 
 impl Component for AppView {
@@ -72,8 +75,8 @@ impl Component for AppView {
             if let Some(_) = &self.video_list {
                 <main>
                     <div class="video-player flex-space-between">
-                        <VideoBox url={"".to_string()} />
-                        <VideoBox url={"".to_string()} />
+                        <VideoBox post={self.first_post.clone()} />
+                        <VideoBox post={self.second_post.clone()} />
                     </div>
                 </main>
             }

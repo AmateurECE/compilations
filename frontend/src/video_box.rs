@@ -7,14 +7,15 @@
 //
 // CREATED:         06/13/2022
 //
-// LAST EDITED:     06/13/2022
+// LAST EDITED:     06/17/2022
 ////
 
 use yew::prelude::*;
+use crate::filter::Post;
 
 #[derive(PartialEq, Properties)]
 pub struct VideoBoxProperties {
-    pub url: String,
+    pub post: Option<Post>,
 }
 
 pub struct VideoBox;
