@@ -7,7 +7,7 @@
 //
 // CREATED:         05/23/2022
 //
-// LAST EDITED:     06/16/2022
+// LAST EDITED:     06/17/2022
 ////
 
 use std::error::Error;
@@ -134,14 +134,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let rate_limiter = rate_limiter.clone();
             move |params, session| {
                 let path = "/api/v1/me".to_string();
-                api::proxy_simple_get(path, params, session, rate_limiter)
+                api::proxy_reddit_get(path, params, session, rate_limiter)
             }
         }))
         .route("/user/:username/saved", get({
             let rate_limiter = rate_limiter.clone();
             move |Path(username): Path<String>, params, session| {
                 let path = "/user/".to_string() + &username + "/saved";
-                api::proxy_simple_get(path, params, session, rate_limiter)
+                api::proxy_reddit_get(path, params, session, rate_limiter)
+            }
+        }))
+        .route("/video/:url", get({
+            move |Path(url): Path<String>| {
+                api::proxy_simple_get(url)
             }
         }))
         .layer(AxumSessionLayer::new(session_store))

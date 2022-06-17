@@ -7,7 +7,7 @@
 //
 // CREATED:         06/16/2022
 //
-// LAST EDITED:     06/16/2022
+// LAST EDITED:     06/17/2022
 ////
 
 use js_sys::{Array, Reflect};
@@ -90,6 +90,26 @@ impl PostCollection {
 
         Ok(children)
     }
+}
+
+pub async fn get_video(url: &str) -> Result<String, JsValue> {
+    // Because of CORS, we have to proxy requests to other domains through
+    // the API server
+    let page_url_encoded = base64::encode(url);
+    let request_url = PUBLIC_URL.to_string() + "/video/"
+        + &page_url_encoded;
+
+    // Create and send request.
+    let request = web_sys::Request::new_with_str(&request_url)?;
+    let window = web_sys::window().unwrap();
+    let value = JsFuture::from(window.fetch_with_request(&request)).await?;
+
+    // Convert the response body to text.
+    assert!(value.is_instance_of::<web_sys::Response>());
+    let response: web_sys::Response = value.dyn_into()?;
+    JsFuture::from(response.text().unwrap()).await?
+        .as_string()
+        .ok_or(JsValue::from("while getting HTML page content"))
 }
 
 ///////////////////////////////////////////////////////////////////////////////
