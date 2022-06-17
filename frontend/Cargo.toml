@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+model = { path = "../model" }
 yew = { git = "https://github.com/yewstack/yew/", features = ["csr"] }
 wasm-logger = "0.2"
 log = "0.4"

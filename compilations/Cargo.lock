@@ -250,6 +250,7 @@ dependencies = [
  "derive_builder",
  "include_dir",
  "mime_guess",
+ "model",
  "oauth2",
  "openssl-sys",
  "reqwest",
@@ -966,6 +967,13 @@ dependencies = [
  "log",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys",
+]
+
+[[package]]
+name = "model"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
