@@ -34,7 +34,7 @@ pub enum AppViewMessage {
 #[derive(Default)]
 pub struct AppView {
     post_collection: Option<PostCollection>,
-    video_list: Option<Array>,
+    post_list: Option<Vec<Post>>,
     first_post: Option<Post>,
     second_post: Option<Post>,
 }
@@ -62,9 +62,19 @@ impl Component for AppView {
     {
         use AppViewMessage::*;
         match message {
-            ReceivedList((value, collection)) => {
+            ReceivedList((array, collection)) => {
                 self.post_collection = Some(collection);
-                self.video_list = Some(value);
+                let mut post_list = Vec::new();
+                for value in array.values() {
+                    let value = value.unwrap();
+                    if let Some(post) = Post::from_object(value) {
+                        post_list.push(post);
+                    }
+                }
+
+                self.first_post = post_list.pop();
+                self.second_post = post_list.pop();
+                self.post_list = Some(post_list);
                 true
             }
         }
@@ -72,7 +82,7 @@ impl Component for AppView {
 
     fn view(&self, _context: &Context<Self>) -> Html {
         html! {
-            if let Some(_) = &self.video_list {
+            if let Some(_) = &self.post_list {
                 <main>
                     <div class="video-player flex-space-between">
                         <VideoBox post={self.first_post.clone()} />
