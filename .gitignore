@@ -3,3 +3,4 @@
 /frontend/src/filter.rs
 /frontend/dist/
 /frontend/target/
+/model/src/lib.rs
