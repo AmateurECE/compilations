@@ -10,6 +10,8 @@
 // LAST EDITED:     06/17/2022
 ////
 
+use wasm_bindgen::JsValue;
+use wasm_bindgen_futures::*;
 use yew::prelude::*;
 use crate::filter::Post;
 
@@ -18,23 +20,64 @@ pub struct VideoBoxProperties {
     pub post: Option<Post>,
 }
 
-pub struct VideoBox;
+pub enum VideoBoxMessage {
+    ReceivedVideoUrl(String),
+}
+
+#[derive(Default)]
+pub struct VideoBox(Option<String>);
+
+impl VideoBox {
+    fn update_video_url(context: &Context<Self>) {
+        use VideoBoxMessage::*;
+        if let Some(post) = &context.props().post {
+            let link = context.link().callback(|url| ReceivedVideoUrl(url));
+            let post = post.clone();
+            spawn_local(async move {
+                match post.get_url().await {
+                    Ok(url) => link.emit(url),
+                    Err(e) => web_sys::console::error_2(&e,
+                        &JsValue::from_serde(&post).unwrap()),
+                };
+            });
+        }
+    }
+}
 
 impl Component for VideoBox {
-    type Message = ();
+    type Message = VideoBoxMessage;
     type Properties = VideoBoxProperties;
 
-    fn create(_context: &Context<Self>) -> Self {
-        Self
+    fn create(context: &Context<Self>) -> Self {
+        VideoBox::update_video_url(context);
+        Self::default()
     }
 
-    fn update(&mut self, _context: &Context<Self>, _message: Self::Message) ->
+    fn changed(&mut self, context: &Context<Self>) -> bool {
+        VideoBox::update_video_url(context);
+        true
+    }
+
+    fn update(&mut self, _context: &Context<Self>, message: Self::Message) ->
         bool
-    { false }
+    {
+        use VideoBoxMessage::*;
+        match message {
+            ReceivedVideoUrl(url) => {
+                self.0 = Some(url);
+                true
+            },
+        }
+    }
 
     fn view(&self, _context: &Context<Self>) -> Html {
         html! {
             <div class="short-video-box">
+                if let Some(url) = self.0.as_ref() {
+                    <video>
+                        <source src={url.clone()} />
+                    </video>
+                }
             </div>
         }
     }
