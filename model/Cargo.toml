@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 serde = "1.0"
+html5ever = "0.25.0"
+kuchiki = "0.8.1"
