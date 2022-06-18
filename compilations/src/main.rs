@@ -7,7 +7,7 @@
 //
 // CREATED:         05/23/2022
 //
-// LAST EDITED:     06/17/2022
+// LAST EDITED:     06/18/2022
 ////
 
 use std::error::Error;
@@ -15,7 +15,8 @@ use std::sync::Arc;
 
 use axum::{
     body::{self, Empty, Full}, http::{header::{self, HeaderValue}, StatusCode},
-    extract::Path, response::{IntoResponse, Response}, routing::get, Router,
+    extract::Path, response::{IntoResponse, Response}, routing::{get, post},
+    Router,
 };
 use axum_database_sessions::{
     AxumSessionConfig, AxumSessionStore, AxumSessionLayer,
@@ -30,6 +31,7 @@ use tower_http::trace::TraceLayer;
 mod api;
 mod configuration;
 mod endpoints;
+mod extractor;
 mod rate_limit;
 mod resolver;
 
@@ -144,11 +146,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 api::proxy_reddit_get(path, params, session, rate_limiter)
             }
         }))
-        .route("/video/:url", get({
-            move |Path(url): Path<String>| {
-                api::proxy_simple_get(url)
-            }
-        }))
+        .route("/video", post(api::get_video_url))
         .layer(AxumSessionLayer::new(session_store))
         .layer(TraceLayer::new_for_http())
         ;

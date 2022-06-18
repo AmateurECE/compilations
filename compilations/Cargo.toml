@@ -24,6 +24,9 @@ reqwest = "0.11"
 reqwest-middleware = "0.1.6"
 reqwest-tracing = "0.2.2"
 
+html5ever = "0.25.0"
+kuchiki = "0.8.1"
+
 [dependencies.openssl-sys]
 version = "0.9.74"
 features = ["vendored"]

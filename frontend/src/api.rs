@@ -99,10 +99,11 @@ pub async fn get_video(request: MediaUrlRequest) -> Result<String, JsValue> {
     headers.set("Content-Type", "application/json").unwrap();
 
     let mut request_init = web_sys::RequestInit::new();
-    request_init.method("POST");
     request_init.headers(&headers.into());
-    request_init.body(Some(&JsValue::from_serde(&request)
-                           .map_err(|e| JsValue::from(e.to_string()))?));
+    request_init.method("POST");
+    let body = serde_json::to_string(&request)
+        .map_err(|e| JsValue::from(e.to_string()))?;
+    request_init.body(Some(&body.into()));
 
     let request_url = PUBLIC_URL.to_string() + "/video";
     let request = web_sys::Request::new_with_str_and_init(
@@ -115,10 +116,9 @@ pub async fn get_video(request: MediaUrlRequest) -> Result<String, JsValue> {
     // Convert the response body to text.
     assert!(value.is_instance_of::<web_sys::Response>());
     let response: web_sys::Response = value.dyn_into()?;
-    JsFuture::from(response.json().unwrap()).await?
-        .into_serde::<Result<String, String>>()
-        .map_err(|e| JsValue::from(e.to_string()))?
-        .map_err(|e| e.into())
+    JsFuture::from(response.text().unwrap()).await?
+        .into_serde::<String>()
+        .map_err(|e| e.to_string().into())
 }
 
 ///////////////////////////////////////////////////////////////////////////////

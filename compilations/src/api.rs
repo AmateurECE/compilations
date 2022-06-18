@@ -7,19 +7,20 @@
 //
 // CREATED:         06/16/2022
 //
-// LAST EDITED:     06/17/2022
+// LAST EDITED:     06/18/2022
 ////
 
 use std::collections::HashMap;
-use std::str;
 
 use axum_database_sessions::AxumSession;
-use axum::{extract::Query, http::StatusCode};
+use axum::{extract::Query, http::StatusCode, Json};
+use model;
 use oauth2::AccessToken;
 use reqwest_middleware::ClientWithMiddleware;
 use tracing::{event, Level};
 use crate::REDDIT_BASE;
 use crate::USER_AGENT;
+use crate::extractor;
 use crate::rate_limit::RateLimiter;
 
 async fn get_user_client(session: &AxumSession) ->
@@ -77,30 +78,15 @@ pub async fn proxy_reddit_get(
     })?)
 }
 
-pub async fn proxy_simple_get(url: String) -> Result<String, StatusCode> {
-    let url_decoded_bytes = base64::decode(url.as_str())
-        .map_err(|e| {
-            event!(Level::ERROR, "{:?}", e);
-            StatusCode::BAD_REQUEST
-        })?;
-    let url_string = str::from_utf8(&url_decoded_bytes)
-        .map_err(|e| {
-            event!(Level::ERROR, "{:?}", e);
-            StatusCode::BAD_REQUEST
-        })?;
-    let response = reqwest::get(url_string)
+pub async fn get_video_url(Json(request): Json<model::MediaUrlRequest>) ->
+    Result<String, StatusCode>
+{
+    extractor::get_url(request)
         .await
         .map_err(|e| {
             event!(Level::ERROR, "{:?}", e);
             StatusCode::BAD_REQUEST
-        })?
-        .text()
-        .await
-        .map_err(|e| {
-            event!(Level::ERROR, "{:?}", e);
-            StatusCode::BAD_REQUEST
-        })?;
-    Ok(response)
+        })
 }
 
 ///////////////////////////////////////////////////////////////////////////////

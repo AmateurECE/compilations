@@ -7,7 +7,7 @@
 //
 // CREATED:         06/13/2022
 //
-// LAST EDITED:     06/17/2022
+// LAST EDITED:     06/18/2022
 ////
 
 use wasm_bindgen::JsValue;
@@ -36,8 +36,11 @@ impl VideoBox {
             spawn_local(async move {
                 match post.get_url().await {
                     Ok(url) => link.emit(url),
-                    Err(e) => web_sys::console::error_2(&e,
-                        &JsValue::from_serde(&post).unwrap()),
+                    Err(e) => web_sys::console::error_3(
+                        &e,
+                        &"while getting post video url".into(),
+                        &JsValue::from_serde(&post).unwrap()
+                    ),
                 };
             });
         }
@@ -74,7 +77,7 @@ impl Component for VideoBox {
         html! {
             <div class="short-video-box">
                 if let Some(url) = self.0.as_ref() {
-                    <video>
+                    <video controls=true>
                         <source src={url.clone()} />
                     </video>
                 }
