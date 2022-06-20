@@ -18,7 +18,6 @@ use crate::filter::Post;
 
 #[derive(PartialEq, Properties)]
 pub struct VideoBoxProperties {
-    pub post: Option<Post>,
     pub onended: Callback<Callback<Option<Post>>>,
     pub unsave: bool,
 }
@@ -36,7 +35,7 @@ pub struct VideoBox {
 }
 
 impl VideoBox {
-    fn update_video_url(&self, context: &Context<Self>) {
+    fn fetch_video_url(&self, context: &Context<Self>) {
         use VideoBoxMessage::*;
         if let Some(post) = &self.post {
             let link = context.link().callback(|url| ReceivedVideoUrl(url));
@@ -53,6 +52,12 @@ impl VideoBox {
             });
         }
     }
+
+    fn fetch_next_post(&self, context: &Context<Self>) {
+        use VideoBoxMessage::*;
+        let callback = context.link().callback(|post| NewPost(post));
+        context.props().onended.emit(callback);
+    }
 }
 
 impl Component for VideoBox {
@@ -60,12 +65,8 @@ impl Component for VideoBox {
     type Properties = VideoBoxProperties;
 
     fn create(context: &Context<Self>) -> Self {
-        let video_box = Self {
-            post: context.props().post.clone(),
-            url: None
-        };
-
-        video_box.update_video_url(context);
+        let video_box = Self::default();
+        video_box.fetch_next_post(context);
         video_box
     }
 
@@ -87,15 +88,14 @@ impl Component for VideoBox {
                     });
                 }
 
-                let callback = context.link().callback(|post| NewPost(post));
-                context.props().onended.emit(callback);
+                self.fetch_next_post(context);
                 true
             },
 
             NewPost(post) => {
                 self.url = None;
                 self.post = post;
-                self.update_video_url(context);
+                self.fetch_video_url(context);
                 true
             },
         }
@@ -114,10 +114,12 @@ impl Component for VideoBox {
             <div class="short-video-box">
                 if let Some(url) = self.url.as_ref() {
                     <p class="text">{ &self.post.as_ref().unwrap().title }</p>
-                    <video controls=true oncanplaythrough={canplaythrough}
-                     onended={context.link().callback(|_| VideoEnded)}>
-                        <source src={url.clone()} />
-                    </video>
+                    <div class="video-box-content">
+                        <video controls=true oncanplaythrough={canplaythrough}
+                         onended={context.link().callback(|_| VideoEnded)}>
+                            <source src={url.clone()} />
+                        </video>
+                    </div>
                 }
             </div>
         }

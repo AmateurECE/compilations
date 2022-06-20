@@ -35,16 +35,13 @@ pub struct AppViewModel {
 
 pub enum AppViewMessage {
     ReceivedList((Array, PostCollection)),
-    FirstEnded(Callback<Option<Post>>),
-    SecondEnded(Callback<Option<Post>>),
+    VideoEnded(Callback<Option<Post>>),
 }
 
 #[derive(Default)]
 pub struct AppView {
     post_collection: Option<PostCollection>,
     post_list: Option<VecDeque<Post>>,
-    first_post: Option<Post>,
-    second_post: Option<Post>,
 }
 
 impl Component for AppView {
@@ -80,18 +77,11 @@ impl Component for AppView {
                     }
                 }
 
-                self.first_post = post_list.pop_front();
-                self.second_post = post_list.pop_front();
                 self.post_list = Some(post_list);
                 true
             },
 
-            FirstEnded(callback) => {
-                callback.emit(self.post_list.as_mut().unwrap().pop_front());
-                false
-            },
-
-            SecondEnded(callback) => {
+            VideoEnded(callback) => {
                 callback.emit(self.post_list.as_mut().unwrap().pop_front());
                 false
             },
@@ -100,18 +90,16 @@ impl Component for AppView {
 
     fn view(&self, context: &Context<Self>) -> Html {
         use AppViewMessage::*;
-        let first_loop = context.link().callback(|c| FirstEnded(c));
-        let second_loop = context.link().callback(|c| SecondEnded(c));
+        let first_loop = context.link().callback(|c| VideoEnded(c));
+        let second_loop = context.link().callback(|c| VideoEnded(c));
 
         let unsave = !context.props().data.debug;
         html! {
             if let Some(_) = &self.post_list {
                 <main>
                     <div class="video-player flex-space-between">
-                        <VideoBox post={self.first_post.clone()}
-                         onended={first_loop} unsave={unsave} />
-                        <VideoBox post={self.second_post.clone()}
-                         onended={second_loop} unsave={unsave} />
+                        <VideoBox onended={first_loop} unsave={unsave} />
+                        <VideoBox onended={second_loop} unsave={unsave} />
                     </div>
                 </main>
             }
