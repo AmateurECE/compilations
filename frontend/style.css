@@ -9,6 +9,7 @@ body {
 
 .text {
     color: white;
+    font: 'arial';
 }
 
 .video-player {

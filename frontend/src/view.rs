@@ -7,8 +7,10 @@
 //
 // CREATED:         06/13/2022
 //
-// LAST EDITED:     06/17/2022
+// LAST EDITED:     06/19/2022
 ////
+
+use std::collections::VecDeque;
 
 use js_sys::Array;
 use wasm_bindgen_futures::spawn_local;
@@ -29,12 +31,14 @@ pub struct AppViewModel {
 
 pub enum AppViewMessage {
     ReceivedList((Array, PostCollection)),
+    FirstEnded,
+    SecondEnded,
 }
 
 #[derive(Default)]
 pub struct AppView {
     post_collection: Option<PostCollection>,
-    post_list: Option<Vec<Post>>,
+    post_list: Option<VecDeque<Post>>,
     first_post: Option<Post>,
     second_post: Option<Post>,
 }
@@ -64,29 +68,47 @@ impl Component for AppView {
         match message {
             ReceivedList((array, collection)) => {
                 self.post_collection = Some(collection);
-                let mut post_list = Vec::new();
+                let mut post_list = VecDeque::new();
                 for value in array.values() {
                     let value = value.unwrap();
                     if let Some(post) = Post::from_object(value) {
-                        post_list.push(post);
+                        post_list.push_back(post);
                     }
                 }
 
-                self.first_post = post_list.pop();
-                self.second_post = post_list.pop();
+                self.first_post = post_list.pop_front();
+                self.second_post = post_list.pop_front();
                 self.post_list = Some(post_list);
                 true
-            }
+            },
+
+            FirstEnded => {
+                self.first_post = self.post_list.as_mut().unwrap()
+                    .pop_front();
+                true
+            },
+
+            SecondEnded => {
+                self.second_post = self.post_list.as_mut().unwrap()
+                    .pop_front();
+                true
+            },
         }
     }
 
-    fn view(&self, _context: &Context<Self>) -> Html {
+    fn view(&self, context: &Context<Self>) -> Html {
+        use AppViewMessage::*;
+        let first_loop = context.link().callback(|_: Event| FirstEnded);
+        let second_loop = context.link().callback(|_: Event| SecondEnded);
+
         html! {
             if let Some(_) = &self.post_list {
                 <main>
                     <div class="video-player flex-space-between">
-                        <VideoBox post={self.first_post.clone()} />
-                        <VideoBox post={self.second_post.clone()} />
+                        <VideoBox post={self.first_post.clone()}
+                         onended={first_loop} />
+                        <VideoBox post={self.second_post.clone()}
+                         onended={second_loop} />
                     </div>
                 </main>
             }

@@ -16,7 +16,7 @@ serde_yaml = "0.8.24"
 include_dir = "0.7.2"
 mime_guess = "2.0.4"
 tower-http = { version = "0.2", features = ["trace"] }
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing = "0.1.35"
 base64 = "0.13.0"
 

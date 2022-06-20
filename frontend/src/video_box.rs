@@ -7,25 +7,30 @@
 //
 // CREATED:         06/13/2022
 //
-// LAST EDITED:     06/18/2022
+// LAST EDITED:     06/20/2022
 ////
 
 use wasm_bindgen::JsValue;
-use wasm_bindgen_futures::*;
+use wasm_bindgen_futures::{JsFuture, spawn_local};
+use web_sys::HtmlVideoElement;
 use yew::prelude::*;
 use crate::filter::Post;
 
 #[derive(PartialEq, Properties)]
 pub struct VideoBoxProperties {
     pub post: Option<Post>,
+    pub onended: Callback<Event>,
 }
 
 pub enum VideoBoxMessage {
     ReceivedVideoUrl(String),
+    VideoEnded(Event),
 }
 
 #[derive(Default)]
-pub struct VideoBox(Option<String>);
+pub struct VideoBox {
+    url: Option<String>,
+}
 
 impl VideoBox {
     fn update_video_url(context: &Context<Self>) {
@@ -61,23 +66,44 @@ impl Component for VideoBox {
         true
     }
 
-    fn update(&mut self, _context: &Context<Self>, message: Self::Message) ->
+    fn update(&mut self, context: &Context<Self>, message: Self::Message) ->
         bool
     {
         use VideoBoxMessage::*;
         match message {
             ReceivedVideoUrl(url) => {
-                self.0 = Some(url);
+                self.url = Some(url);
+                true
+            },
+
+            VideoEnded(e) => {
+                let post = context.props().post.clone();
+                spawn_local(async move {
+                    post.unwrap().unsave().await.unwrap();
+                });
+                context.props().onended.emit(e);
                 true
             },
         }
     }
 
-    fn view(&self, _context: &Context<Self>) -> Html {
+    fn view(&self, context: &Context<Self>) -> Html {
+        use VideoBoxMessage::*;
+        let canplaythrough = |e: Event| {
+            spawn_local (async move {
+                JsFuture::from(e.target_dyn_into::<HtmlVideoElement>()
+                               .unwrap().play().unwrap()).await.unwrap();
+            });
+        };
+
         html! {
             <div class="short-video-box">
-                if let Some(url) = self.0.as_ref() {
-                    <video controls=true>
+                if let Some(url) = self.url.as_ref() {
+                    <p class="text">{
+                        &context.props().post.as_ref().unwrap().title
+                    }</p>
+                    <video controls=true oncanplaythrough={canplaythrough}
+                     onended={context.link().callback(|e| VideoEnded(e))}>
                         <source src={url.clone()} />
                     </video>
                 }

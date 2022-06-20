@@ -7,7 +7,7 @@
 //
 // CREATED:         05/23/2022
 //
-// LAST EDITED:     06/19/2022
+// LAST EDITED:     06/20/2022
 ////
 
 use std::error::Error;
@@ -88,8 +88,9 @@ async fn frontend_resource(Path(path): Path<String>) -> impl IntoResponse {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     // Configure tower-http to trace requests/responses
-    std::env::set_var("RUST_LOG", "tower_http=trace");
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt()
+        .with_env_filter("tower_http=debug,reqwest=debug,compilations=debug")
+        .init();
 
     let args = Args::parse();
 

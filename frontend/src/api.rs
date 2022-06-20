@@ -7,7 +7,7 @@
 //
 // CREATED:         06/16/2022
 //
-// LAST EDITED:     06/18/2022
+// LAST EDITED:     06/19/2022
 ////
 
 use model::MediaUrlRequest;
@@ -119,6 +119,25 @@ pub async fn get_video(request: MediaUrlRequest) -> Result<String, JsValue> {
     JsFuture::from(response.text().unwrap()).await?
         .into_serde::<String>()
         .map_err(|e| e.to_string().into())
+}
+
+pub async fn unsave(id: &str) -> Result<(), JsValue> {
+    let mut request_init = web_sys::RequestInit::new();
+    request_init.method("POST");
+    let request_url = PUBLIC_URL.to_string() + "/api/unsave?id=" + id;
+    let request = web_sys::Request::new_with_str_and_init(
+        &request_url, &request_init)?;
+
+    // Send request
+    let window = web_sys::window().unwrap();
+    let value = JsFuture::from(window.fetch_with_request(&request)).await?;
+
+    assert!(value.is_instance_of::<web_sys::Response>());
+    let response: web_sys::Response = value.dyn_into()?;
+    match response.ok() {
+        true => Ok(()),
+        false => Err(response.status_text().into()),
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
