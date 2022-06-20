@@ -7,7 +7,7 @@
 //
 // CREATED:         06/16/2022
 //
-// LAST EDITED:     06/18/2022
+// LAST EDITED:     06/19/2022
 ////
 
 use std::collections::HashMap;
@@ -65,6 +65,27 @@ pub async fn proxy_reddit_get(
     let client = get_user_client(&session).await?;
     let response = rate_limiter.send(
         client.get(REDDIT_BASE.to_string() + &reddit_endpoint)
+            .query(&params)
+    )
+        .await
+        .map_err(|e| {
+            event!(Level::ERROR, "{:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(response.text().await.map_err(|e| {
+        event!(Level::ERROR, "{:?}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?)
+}
+
+pub async fn proxy_reddit_post(
+    reddit_endpoint: String, Query(params): Query<HashMap<String, String>>,
+    session: AxumSession, mut rate_limiter: RateLimiter,
+) -> Result<String, StatusCode>
+{
+    let client = get_user_client(&session).await?;
+    let response = rate_limiter.send(
+        client.post(REDDIT_BASE.to_string() + &reddit_endpoint)
             .query(&params)
     )
         .await

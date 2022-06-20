@@ -7,7 +7,7 @@
 //
 // CREATED:         05/23/2022
 //
-// LAST EDITED:     06/18/2022
+// LAST EDITED:     06/19/2022
 ////
 
 use std::error::Error;
@@ -144,6 +144,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
             move |Path(username): Path<String>, params, session| {
                 let path = "/user/".to_string() + &username + "/saved";
                 api::proxy_reddit_get(path, params, session, rate_limiter)
+            }
+        }))
+        .route("/api/unsave", post({
+            let rate_limiter = rate_limiter.clone();
+            move |params, session| {
+                let path = "/api/unsave".to_string();
+                api::proxy_reddit_post(path, params, session, rate_limiter)
             }
         }))
         .route("/video", post(api::get_video_url))
