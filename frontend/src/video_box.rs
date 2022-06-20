@@ -20,6 +20,7 @@ use crate::filter::Post;
 pub struct VideoBoxProperties {
     pub post: Option<Post>,
     pub onended: Callback<Event>,
+    pub unsave: bool,
 }
 
 pub enum VideoBoxMessage {
@@ -77,10 +78,12 @@ impl Component for VideoBox {
             },
 
             VideoEnded(e) => {
-                let post = context.props().post.clone();
-                spawn_local(async move {
-                    post.unwrap().unsave().await.unwrap();
-                });
+                if context.props().unsave {
+                    let post = context.props().post.clone();
+                    spawn_local(async move {
+                        post.unwrap().unsave().await.unwrap();
+                    });
+                }
                 context.props().onended.emit(e);
                 true
             },

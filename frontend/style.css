@@ -9,7 +9,11 @@ body {
 
 .text {
     color: white;
-    font: 'arial';
+    font-family: 'sans-serif';
+}
+
+label {
+    padding-left: 10pt;
 }
 
 .video-player {
@@ -37,4 +41,8 @@ body {
 video {
     max-height: 100vh !important;
     max-width: 100%;
+}
+
+.p-10 {
+    padding: 10pt;
 }

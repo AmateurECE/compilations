@@ -7,7 +7,7 @@
 //
 // CREATED:         06/13/2022
 //
-// LAST EDITED:     06/19/2022
+// LAST EDITED:     06/20/2022
 ////
 
 use std::collections::VecDeque;
@@ -21,7 +21,11 @@ use crate::video_box::VideoBox;
 
 #[derive(Clone, Default, PartialEq)]
 pub struct ApplicationData {
+    // Username for requests to Reddit API
     pub username: String,
+
+    // Debug mode
+    pub debug: bool,
 }
 
 #[derive(Clone, PartialEq, Properties)]
@@ -101,14 +105,15 @@ impl Component for AppView {
         let first_loop = context.link().callback(|_: Event| FirstEnded);
         let second_loop = context.link().callback(|_: Event| SecondEnded);
 
+        let unsave = !context.props().data.debug;
         html! {
             if let Some(_) = &self.post_list {
                 <main>
                     <div class="video-player flex-space-between">
                         <VideoBox post={self.first_post.clone()}
-                         onended={first_loop} />
+                         onended={first_loop} unsave={unsave} />
                         <VideoBox post={self.second_post.clone()}
-                         onended={second_loop} />
+                         onended={second_loop} unsave={unsave} />
                     </div>
                 </main>
             }

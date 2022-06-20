@@ -7,10 +7,11 @@
 //
 // CREATED:         06/13/2022
 //
-// LAST EDITED:     06/16/2022
+// LAST EDITED:     06/20/2022
 ////
 
 use wasm_bindgen_futures::spawn_local;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use crate::api::get_identity;
 use crate::filter::IdentityFilter;
@@ -29,6 +30,7 @@ pub enum AppFormMessage {
 #[derive(Default)]
 pub struct AppForm {
     username: Option<String>,
+    debug: NodeRef,
 }
 
 impl Component for AppForm {
@@ -54,6 +56,8 @@ impl Component for AppForm {
             AppFormMessage::Start => {
                 let data = ApplicationData {
                     username: self.username.as_ref().unwrap().clone(),
+                    debug: self.debug.cast::<HtmlInputElement>().unwrap()
+                        .checked(),
                 };
                 context.props().callback.emit(data);
                 false
@@ -69,8 +73,15 @@ impl Component for AppForm {
     fn view(&self, context: &Context<Self>) -> Html {
         html! {
             if let Some(username) = &self.username {
-                <div>
-                    <p class="text">{ {"u/".to_string()} + username }</p>
+                <div class="p-10">
+                    <p class="text">{
+                        {"Hello, u/".to_string()} + username + "!"
+                    }</p>
+                    <div class="input-group">
+                        <input id="debug" type="checkbox" name="debug"
+                         value="yes" ref={self.debug.clone()} />
+                        <label class="text" for="debug">{"Debug Mode"}</label>
+                    </div>
                     <button onclick={context.link().callback(|e: MouseEvent| {
                         e.prevent_default();
                         AppFormMessage::Start
