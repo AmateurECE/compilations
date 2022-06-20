@@ -1,4 +1,3 @@
-/node_modules/
 /compilations/src/extractor.rs
 /compilations/target/
 /frontend/src/filter.rs
