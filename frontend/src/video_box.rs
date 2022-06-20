@@ -19,24 +19,26 @@ use crate::filter::Post;
 #[derive(PartialEq, Properties)]
 pub struct VideoBoxProperties {
     pub post: Option<Post>,
-    pub onended: Callback<Event>,
+    pub onended: Callback<Callback<Option<Post>>>,
     pub unsave: bool,
 }
 
 pub enum VideoBoxMessage {
     ReceivedVideoUrl(String),
-    VideoEnded(Event),
+    VideoEnded,
+    NewPost(Option<Post>),
 }
 
 #[derive(Default)]
 pub struct VideoBox {
+    post: Option<Post>,
     url: Option<String>,
 }
 
 impl VideoBox {
-    fn update_video_url(context: &Context<Self>) {
+    fn update_video_url(&self, context: &Context<Self>) {
         use VideoBoxMessage::*;
-        if let Some(post) = &context.props().post {
+        if let Some(post) = &self.post {
             let link = context.link().callback(|url| ReceivedVideoUrl(url));
             let post = post.clone();
             spawn_local(async move {
@@ -58,13 +60,13 @@ impl Component for VideoBox {
     type Properties = VideoBoxProperties;
 
     fn create(context: &Context<Self>) -> Self {
-        VideoBox::update_video_url(context);
-        Self::default()
-    }
+        let video_box = Self {
+            post: context.props().post.clone(),
+            url: None
+        };
 
-    fn changed(&mut self, context: &Context<Self>) -> bool {
-        VideoBox::update_video_url(context);
-        true
+        video_box.update_video_url(context);
+        video_box
     }
 
     fn update(&mut self, context: &Context<Self>, message: Self::Message) ->
@@ -77,14 +79,23 @@ impl Component for VideoBox {
                 true
             },
 
-            VideoEnded(e) => {
+            VideoEnded => {
                 if context.props().unsave {
-                    let post = context.props().post.clone();
+                    let post = self.post.as_ref().unwrap().clone();
                     spawn_local(async move {
-                        post.unwrap().unsave().await.unwrap();
+                        post.unsave().await.unwrap();
                     });
                 }
-                context.props().onended.emit(e);
+
+                let callback = context.link().callback(|post| NewPost(post));
+                context.props().onended.emit(callback);
+                true
+            },
+
+            NewPost(post) => {
+                self.url = None;
+                self.post = post;
+                self.update_video_url(context);
                 true
             },
         }
@@ -102,11 +113,9 @@ impl Component for VideoBox {
         html! {
             <div class="short-video-box">
                 if let Some(url) = self.url.as_ref() {
-                    <p class="text">{
-                        &context.props().post.as_ref().unwrap().title
-                    }</p>
+                    <p class="text">{ &self.post.as_ref().unwrap().title }</p>
                     <video controls=true oncanplaythrough={canplaythrough}
-                     onended={context.link().callback(|e| VideoEnded(e))}>
+                     onended={context.link().callback(|_| VideoEnded)}>
                         <source src={url.clone()} />
                     </video>
                 }

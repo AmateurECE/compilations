@@ -35,8 +35,8 @@ pub struct AppViewModel {
 
 pub enum AppViewMessage {
     ReceivedList((Array, PostCollection)),
-    FirstEnded,
-    SecondEnded,
+    FirstEnded(Callback<Option<Post>>),
+    SecondEnded(Callback<Option<Post>>),
 }
 
 #[derive(Default)]
@@ -86,24 +86,22 @@ impl Component for AppView {
                 true
             },
 
-            FirstEnded => {
-                self.first_post = self.post_list.as_mut().unwrap()
-                    .pop_front();
-                true
+            FirstEnded(callback) => {
+                callback.emit(self.post_list.as_mut().unwrap().pop_front());
+                false
             },
 
-            SecondEnded => {
-                self.second_post = self.post_list.as_mut().unwrap()
-                    .pop_front();
-                true
+            SecondEnded(callback) => {
+                callback.emit(self.post_list.as_mut().unwrap().pop_front());
+                false
             },
         }
     }
 
     fn view(&self, context: &Context<Self>) -> Html {
         use AppViewMessage::*;
-        let first_loop = context.link().callback(|_: Event| FirstEnded);
-        let second_loop = context.link().callback(|_: Event| SecondEnded);
+        let first_loop = context.link().callback(|c| FirstEnded(c));
+        let second_loop = context.link().callback(|c| SecondEnded(c));
 
         let unsave = !context.props().data.debug;
         html! {
