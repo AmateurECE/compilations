@@ -111,15 +111,15 @@ impl Component for VideoBox {
         };
 
         html! {
-            <div class="short-video-box">
+            <div class="player-window">
                 if let Some(url) = self.url.as_ref() {
-                    <p class="text">{ &self.post.as_ref().unwrap().title }</p>
-                    <div class="video-box-content">
-                        <video controls=true oncanplaythrough={canplaythrough}
-                         onended={context.link().callback(|_| VideoEnded)}>
-                            <source src={url.clone()} />
-                        </video>
-                    </div>
+                    <p class="text video-title">{
+                        &self.post.as_ref().unwrap().title
+                    }</p>
+                    <video controls=true oncanplaythrough={canplaythrough}
+                     onended={context.link().callback(|_| VideoEnded)}>
+                        <source src={url.clone()} />
+                    </video>
                 }
             </div>
         }

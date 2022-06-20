@@ -97,7 +97,7 @@ impl Component for AppView {
         html! {
             if let Some(_) = &self.post_list {
                 <main>
-                    <div class="video-player flex-space-between">
+                    <div class="video-player">
                         <VideoBox onended={first_loop} unsave={unsave} />
                         <VideoBox onended={second_loop} unsave={unsave} />
                     </div>
