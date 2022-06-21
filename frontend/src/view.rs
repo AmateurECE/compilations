@@ -7,9 +7,10 @@
 //
 // CREATED:         06/13/2022
 //
-// LAST EDITED:     06/20/2022
+// LAST EDITED:     06/21/2022
 ////
 
+use core::cmp::min;
 use std::collections::VecDeque;
 
 use js_sys::Array;
@@ -40,8 +41,38 @@ pub enum AppViewMessage {
 
 #[derive(Default)]
 pub struct AppView {
+    // Mechanism to retrieve new posts
     post_collection: Option<PostCollection>,
+
+    // List of filtered posts
     post_list: Option<VecDeque<Post>>,
+
+    // List of children waiting for a post
+    wait_queue: VecDeque<Callback<Option<Post>>>,
+}
+
+impl AppView {
+    fn update_collection(&self, context: &Context<Self>) {
+        use AppViewMessage::*;
+        if let Some(collection) = self.post_collection.as_ref() {
+            let link = context.link().callback(
+                |(value, collection)| ReceivedList((value, collection)));
+            let mut collection = collection.clone();
+            spawn_local(async move {
+                let response = collection.next().await.unwrap();
+                link.emit((response, collection));
+            });
+        }
+    }
+
+    fn wake_wait_queue(&mut self) {
+        let post_list = self.post_list.as_mut().unwrap();
+        let posts = min(post_list.len(), self.wait_queue.len());
+        for _ in 0..posts {
+            let callback = self.wait_queue.pop_front().unwrap();
+            callback.emit(post_list.pop_front());
+        }
+    }
 }
 
 impl Component for AppView {
@@ -62,7 +93,7 @@ impl Component for AppView {
         Self::default()
     }
 
-    fn update(&mut self, _context: &Context<Self>, message: Self::Message) ->
+    fn update(&mut self, context: &Context<Self>, message: Self::Message) ->
         bool
     {
         use AppViewMessage::*;
@@ -78,11 +109,18 @@ impl Component for AppView {
                 }
 
                 self.post_list = Some(post_list);
+                self.wake_wait_queue();
                 true
             },
 
             VideoEnded(callback) => {
-                callback.emit(self.post_list.as_mut().unwrap().pop_front());
+                let option = self.post_list.as_mut().unwrap().pop_front();
+                if let Some(post) = option {
+                    callback.emit(Some(post));
+                } else {
+                    self.wait_queue.push_back(callback);
+                    self.update_collection(context);
+                }
                 false
             },
         }
