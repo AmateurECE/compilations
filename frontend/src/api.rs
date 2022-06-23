@@ -7,7 +7,7 @@
 //
 // CREATED:         06/16/2022
 //
-// LAST EDITED:     06/19/2022
+// LAST EDITED:     06/23/2022
 ////
 
 use model::MediaUrlRequest;
@@ -36,6 +36,12 @@ async fn fetch(request: web_sys::Request) -> Result<JsValue, JsValue> {
 // Get the identity of the currently logged in user
 pub async fn get_identity() -> Result<JsValue, JsValue> {
     let endpoint = PUBLIC_URL.to_string() + "/api/v1/me";
+    let request = web_sys::Request::new_with_str(&endpoint)?;
+    fetch(request).await
+}
+
+pub async fn get_subscribed() -> Result<JsValue, JsValue> {
+    let endpoint = PUBLIC_URL.to_string() + "/subreddits/mine/subscriber";
     let request = web_sys::Request::new_with_str(&endpoint)?;
     fetch(request).await
 }
