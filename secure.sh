@@ -8,7 +8,7 @@
 #
 # CREATED:	    07/27/2021
 #
-# LAST EDITED:	    06/20/2022
+# LAST EDITED:	    07/05/2022
 ###
 
 if [[ -z "$1" ]]; then
@@ -32,6 +32,9 @@ case "$1" in
     encrypt)
         tar czvf $DECRYPTED_ARCHIVE ${FILES[@]}
         age -R ~/.ssh/id_rsa.pub $DECRYPTED_ARCHIVE > $ENCRYPTED_ARCHIVE
+        ;;
+    clean)
+        rm -f ${FILES[@]}
         ;;
     *)
         >&2 printf 'Usage: %s <encrypt|decrypt>' "$0"
