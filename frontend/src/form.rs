@@ -7,14 +7,14 @@
 //
 // CREATED:         06/13/2022
 //
-// LAST EDITED:     06/23/2022
+// LAST EDITED:     06/20/2022
 ////
 
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use crate::api;
-use crate::filter::{IdentityFilter, Subreddit, SubredditFilter};
+use crate::api::get_identity;
+use crate::filter::IdentityFilter;
 use crate::view::ApplicationData;
 
 #[derive(Clone, Default, PartialEq, Properties)]
@@ -22,13 +22,8 @@ pub struct AppFormModel {
     pub callback: Callback<ApplicationData>,
 }
 
-pub struct Identity {
-    pub username: String,
-    pub subscribed: Vec<Subreddit>,
-}
-
 pub enum AppFormMessage {
-    ReceivedIdentity(Identity),
+    Identity(String),
     Start,
 }
 
@@ -44,17 +39,11 @@ impl Component for AppForm {
 
     fn create(context: &Context<Self>) -> Self {
         use AppFormMessage::*;
-        let link = context.link().callback(|data| ReceivedIdentity(data));
+        let link = context.link().callback(|data| Identity(data));
         spawn_local(async move {
-            let identity = api::get_identity().await.unwrap();
-            let subscribed_to = api::get_subscribed().await.unwrap();
-
+            let identity = get_identity().await.unwrap();
             let username = IdentityFilter::new(identity).username();
-            let subreddits = SubredditFilter::new(subscribed_to);
-            link.emit(Identity {
-                username: username.unwrap(),
-                subscribed: subreddits.get(),
-            });
+            link.emit(username.unwrap());
         });
 
         Self::default()
@@ -73,8 +62,9 @@ impl Component for AppForm {
                 context.props().callback.emit(data);
                 false
             },
-            AppFormMessage::ReceivedIdentity(data) => {
-                self.username = Some(data.username.clone());
+            AppFormMessage::Identity(data) => {
+                self.username = Some(data.clone());
+                web_sys::console::log_1(&data.into());
                 true
             },
         }
@@ -98,7 +88,7 @@ impl Component for AppForm {
                     })}>{ "Start" }</button>
                     </div>
             } else {
-                <p class="p-10 text">{ "Loading..." }</p>
+                <p>{ "Loading..." }</p>
             }
         }
     }

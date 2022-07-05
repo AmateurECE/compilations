@@ -7,7 +7,7 @@
 //
 // CREATED:         06/03/2022
 //
-// LAST EDITED:     06/23/2022
+// LAST EDITED:     06/16/2022
 ////
 
 use std::collections::HashMap;
@@ -32,7 +32,6 @@ pub async fn login(session: AxumSession, client: Arc<BasicClient>) ->
         .add_scope(Scope::new("history".to_string()))
         .add_scope(Scope::new("identity".to_string()))
         .add_scope(Scope::new("save".to_string()))
-        .add_scope(Scope::new("mysubreddits".to_string()))
         .url();
     session.set(CSRF_TOKEN_KEY, csrf_token).await;
 
