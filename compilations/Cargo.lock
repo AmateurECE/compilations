@@ -241,7 +241,7 @@ dependencies = [
 
 [[package]]
 name = "compilations"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "axum",
  "axum_database_sessions",
@@ -1132,7 +1132,7 @@ dependencies = [
 
 [[package]]
 name = "model"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "serde",
 ]
