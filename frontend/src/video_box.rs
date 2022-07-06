@@ -7,7 +7,7 @@
 //
 // CREATED:         06/13/2022
 //
-// LAST EDITED:     06/20/2022
+// LAST EDITED:     07/05/2022
 ////
 
 use wasm_bindgen::JsValue;
@@ -105,8 +105,9 @@ impl Component for VideoBox {
         use VideoBoxMessage::*;
         let canplaythrough = |e: Event| {
             spawn_local (async move {
-                JsFuture::from(e.target_dyn_into::<HtmlVideoElement>()
-                               .unwrap().play().unwrap()).await.unwrap();
+                let element = e.target_dyn_into::<HtmlVideoElement>().unwrap();
+                element.set_volume(0.5 as f64);
+                JsFuture::from(element.play().unwrap()).await.unwrap();
             });
         };
 
